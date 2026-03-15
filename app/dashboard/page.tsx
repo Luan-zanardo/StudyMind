@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import Simulado from "@/components/Simulado";
 import Analysis from "@/components/Analysis";
+import BoldRenderer from "@/components/BoldRenderer";
 import Link from "next/link";
 
 export default function Dashboard() {
@@ -163,7 +164,7 @@ export default function Dashboard() {
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-start">
 
             {/* MATERIAL (UPLOAD) */}
-            <div className="w-full mb-10 lg:mb-0 lg:col-span-4 lg:sticky lg:top-36 space-y-8">
+            <div className="w-full lg:mb-0 lg:col-span-4 lg:sticky lg:top-36 space-y-8">
 
               <div className="bg-white/[0.03] border border-white/5 p-8 rounded-[2.5rem] space-y-6 shadow-2xl relative overflow-hidden">
 
@@ -249,7 +250,7 @@ export default function Dashboard() {
                       </div>
                       <div>
                         <h2 className="text-3xl font-black tracking-tighter">
-                          Resumo Master
+                          Resumo
                         </h2>
                         <p className="text-zinc-500 text-sm">
                           Os conceitos centrais explicados em profundidade.
@@ -262,19 +263,15 @@ export default function Dashboard() {
                           key={i}
                           className="bg-white/[0.03] border border-white/5 p-6 md:p-8 rounded-[2.5rem]"
                         >
-                          <div className="flex items-start gap-4">
+                          <div className="flex items-center gap-4 mb-4">
                             <span className="text-indigo-500/50 font-black text-4xl">
                               {String(i + 1).padStart(2, "0")}
                             </span>
-                            <div className="space-y-3">
-                              <h3 className="text-xl font-bold">
-                                {item.topico}
-                              </h3>
-                              <p className="text-zinc-400">
-                                {item.explicacao}
-                              </p>
-                            </div>
+                            <h3 className="text-xl font-bold text-white">
+                              {item.topico}
+                            </h3>
                           </div>
+                          <BoldRenderer text={item.explicacao} className="text-zinc-400 text-justify" />
                         </div>
                       ))}
                     </div>

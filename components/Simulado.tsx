@@ -85,12 +85,12 @@ export default function Simulado({ questoes, onComplete }: { questoes: Questao[]
       
       <h3 className="text-2xl font-bold text-white leading-tight tracking-tight">{q.enunciado}</h3>
 
-      <div className="grid gap-4">
+      <div className="grid gap-2 md:gap-4">
         {q.opcoes.map((opcao, idx) => (
           <button
             key={idx}
             onClick={() => !revealed && setSelected(idx)}
-            className={`text-left p-6 rounded-[1.5rem] border transition-all duration-300 font-medium relative overflow-hidden ${
+            className={`text-left p-2 md:p-6 rounded-[1.5rem] border transition-all duration-300 font-medium relative overflow-hidden ${
               selected === idx 
                 ? "border-indigo-500 bg-indigo-500/10 text-white" 
                 : "border-white/5 bg-white/[0.02] text-zinc-400 hover:border-white/10 hover:bg-white/[0.04]"

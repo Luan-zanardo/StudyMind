@@ -23,71 +23,54 @@ interface GroupedData {
 
 export default function Analysis({ user }: { user: any }) {
   const [history, setHistory] = useState<StudySession[]>([]);
-  const [completedTopics, setCompletedTopics] = useState<string[]>([]); // State for the old checklist button
-  const [topicCompletionStatus, setTopicCompletionStatus] = useState<{ [key: string]: boolean }>({}); // New state for the left-side checklist
+  const [completedStatus, setCompletedStatus] = useState<{ [key: string]: boolean }>({});
   const [loading, setLoading] = useState(true);
   const [expandedTopic, setExpandedTopic] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchData = async () => {
       if (!user) return;
-      
-      // Busca Histórico
+      setLoading(true);
+
       const { data: historyData } = await supabase
         .from("study_sessions")
         .select("*")
         .eq("user_id", user.id)
         .order("created_at", { ascending: false });
 
-      // Busca Status dos Materiais (Checklist Manual - antigo)
+      if (historyData) setHistory(historyData);
+
       const { data: statusData } = await supabase
         .from("material_status")
-        .select("topic")
-        .eq("user_id", user.id)
-        .eq("is_completed", true);
+        .select("topic, is_completed")
+        .eq("user_id", user.id);
 
-      if (historyData) setHistory(historyData);
-      if (statusData) setCompletedTopics(statusData.map(s => s.topic));
-      
-      // Fetch status for the new checklist if it needs to be persisted
-      // For now, let's assume it's client-side state unless specified otherwise.
-      // If persistence is needed, a new table/column or modification to 'material_status' would be required.
-      
+      if (statusData) {
+        const statusMap = statusData.reduce((acc, status) => {
+          acc[status.topic] = status.is_completed;
+          return acc;
+        }, {} as { [key: string]: boolean });
+        setCompletedStatus(statusMap);
+      }
+
       setLoading(false);
     };
 
     fetchData();
   }, [user]);
 
-  const toggleComplete = async (topic: string, e: React.MouseEvent) => {
-    e.stopPropagation(); // Evita expandir o acordeão ao clicar no check
-    
-    const isCurrentlyCompleted = completedTopics.includes(topic);
-    
-    if (isCurrentlyCompleted) {
-      // Remove do banco
-      await supabase.from("material_status").delete().eq("user_id", user.id).eq("topic", topic);
-      setCompletedTopics(prev => prev.filter(t => t !== topic));
-    } else {
-      // Adiciona no banco
-      await supabase.from("material_status").upsert({ 
-        user_id: user.id, 
-        topic: topic, 
-        is_completed: true 
-      });
-      setCompletedTopics(prev => [...prev, topic]);
-    }
-  };
+  const toggleTopicCompletion = async (topic: string, e: React.MouseEvent) => {
+    e.stopPropagation();
 
-  const handleNewChecklistToggle = (topic: string) => {
-    setTopicCompletionStatus(prevStatus => {
-      const newStatus = { ...prevStatus };
-      // Toggle the status for the given topic
-      newStatus[topic] = !newStatus[topic];
-      // Optional: Persist to Supabase if needed, similar to toggleComplete
-      // For now, it's client-side state.
-      return newStatus;
-    });
+    const isCurrentlyCompleted = completedStatus[topic] || false;
+    const newStatus = !isCurrentlyCompleted;
+
+    setCompletedStatus(prev => ({ ...prev, [topic]: newStatus }));
+
+    await supabase.from("material_status").upsert(
+      { user_id: user.id, topic: topic, is_completed: newStatus },
+      { onConflict: 'user_id, topic' }
+    );
   };
 
   const clearHistory = async () => {
@@ -126,18 +109,13 @@ export default function Analysis({ user }: { user: any }) {
             const data = grouped[topic];
             const accuracy = (data.totalCorrect / data.totalQuestions) * 100;
             const isExpanded = expandedTopic === topic;
-            const isTopicManuallyCompleted = completedTopics.includes(topic); // From old button/Supabase
-            const isNewChecklistCompleted = topicCompletionStatus[topic] || false; // From new left-side checklist
+            const isCompleted = completedStatus[topic] || false;
 
-            // Determine the final completion state for styling the main container
-            const isOverallCompleted = isTopicManuallyCompleted || isNewChecklistCompleted;
-
-            // Define border class based on completion and expansion state
-            let topicBorderClass = "border-white/5 hover:border-white/10"; // Default border
-            if (isOverallCompleted) {
-              topicBorderClass = "!border-emerald-500"; // Green border if completed by either method
+            let topicBorderClass = "border-white/5 hover:border-white/10";
+            if (isCompleted) {
+              topicBorderClass = "!border-emerald-500";
             } else if (isExpanded) {
-              topicBorderClass = "border-indigo-500/50 bg-white/[0.05]"; // Indigo border if expanded but not completed
+              topicBorderClass = "border-indigo-500/50 bg-white/[0.05]";
             }
 
             return (
@@ -146,49 +124,42 @@ export default function Analysis({ user }: { user: any }) {
                 className={`bg-white/[0.03] border rounded-[2.5rem] transition-all overflow-hidden ${topicBorderClass}`}
               >
                 <div className="w-full flex flex-col md:flex-row md:items-center justify-between gap-6 p-8">
-                  {/* Left Side: New Checklist Control + Icon + Topic Details */}
-                  <div className="flex items-center gap-5 flex-1" onClick={() => setExpandedTopic(isExpanded ? null : topic)}>
-                    
-                    {/* New Checklist Control */}
+                  <div className="flex items-center gap-2 md:gap-5 flex-1" onClick={() => setExpandedTopic(isExpanded ? null : topic)}>
+
                     <div 
                       className="cursor-pointer flex-shrink-0" 
-                      onClick={(e) => {
-                        e.stopPropagation(); // Prevent expanding the topic when clicking the checklist
-                        handleNewChecklistToggle(topic);
-                      }}
+                      onClick={(e) => toggleTopicCompletion(topic, e)}
                     >
-                      <div className={`w-14 h-14 rounded-2xl flex items-center justify-center border transition-all duration-300
-                          ${isNewChecklistCompleted ? "bg-emerald-500 border-emerald-500" : "bg-white/5 border-white/10"}`}
+                      <div className={`w-10 h-10 md:w-14 md:h-14 rounded-2xl flex items-center justify-center border transition-all duration-300
+                          ${isCompleted ? "bg-emerald-500 border-emerald-500" : "bg-white/5 border-white/10"}`}
                         >
-                          {isNewChecklistCompleted ? (
-                            <CheckCircle2 className="w-7 h-7 text-white" />
+                          {isCompleted ? (
+                            <CheckCircle2 className="w-5 h-5 md:w-7 md:h-7 text-white" />
                           ) : (
-                            <Circle className="w-7 h-7 text-zinc-600" />
+                            <Circle className="w-5 h-5 md:w-7 md:h-7 text-zinc-600" />
                           )}
                       </div>
                     </div>
 
-                    {/* Original Icon and Topic Details */}
                     <div className="relative">
-                      <div className={`w-14 h-14 rounded-2xl flex items-center justify-center border transition-colors ${isTopicManuallyCompleted ? "bg-emerald-500/10 border-emerald-500/20" : "bg-white/5 border-white/10"}`}>
-                        <FileText className={`w-7 h-7 ${isTopicManuallyCompleted ? "text-emerald-500" : "text-zinc-600"}`} />
+                      <div className={`w-10 h-10 md:w-14 md:h-14 rounded-2xl flex items-center justify-center border transition-colors ${isCompleted ? "bg-emerald-500/10 border-emerald-500/20" : "bg-white/5 border-white/10"}`}>
+                        <FileText className={`w-5 h-5 md:w-7 md:h-7 ${isCompleted ? "text-emerald-500" : "text-zinc-600"}`} />
                       </div>
                     </div>
                     <div>
-                      <h3 className="text-xl font-bold text-white truncate max-w-[200px] md:max-w-md">{topic}</h3>
+                      <h3 className="text-xl font-bold text-white truncate md:max-w-md">{topic}</h3>
                       <p className="text-zinc-500 text-[10px] font-black uppercase tracking-widest mt-1">
-                        {data.sessions.length} Tentativas • {isTopicManuallyCompleted ? "Estudado" : "Em Progresso"}
+                        {data.sessions.length} Tentativas
                       </p>
                     </div>
                   </div>
 
-                  {/* Right Side: Average Score, Expand Button */}
                   <div className="flex items-center gap-8">
                     <div className="text-right min-w-[80px]">
                       <p className="text-zinc-500 text-[10px] font-black uppercase tracking-widest mb-1">Média</p>
                       <p className={`text-2xl font-black ${accuracy >= 70 ? 'text-emerald-400' : 'text-indigo-400'}`}>{accuracy.toFixed(0)}%</p>
                     </div>
-                    
+
                     <button onClick={() => setExpandedTopic(isExpanded ? null : topic)} className="p-2 hover:bg-white/5 rounded-lg transition">
                       {isExpanded ? <ChevronUp className="text-zinc-500" /> : <ChevronDown className="text-zinc-500" />}
                     </button>
@@ -217,7 +188,7 @@ export default function Analysis({ user }: { user: any }) {
         <div className="bg-white/[0.02] border border-white/5 border-dashed rounded-[3rem] p-32 text-center">
           <Award className="w-16 h-16 text-zinc-800 mx-auto mb-6 opacity-20" />
           <h3 className="text-xl font-bold text-zinc-500 mb-2">Sem histórico</h3>
-          <p className="text-zinc-600 max-w-xs mx-auto font-medium">As sessões e seu checklist manual serão salvos na sua conta.</p>
+          <p className="text-zinc-600 max-w-xs mx-auto font-medium">As sessões e seu histórico de estudos serão salvos na sua conta.</p>
         </div>
       )}
     </div>
