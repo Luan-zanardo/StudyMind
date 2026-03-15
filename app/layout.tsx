@@ -5,8 +5,11 @@ import "./globals.css";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "StudyMind - Estudo Inteligente com IA",
-  description: "Transforme seus PDFs em ferramentas de aprendizado com Gemini 1.5 Flash",
+  title: "StudyMind",
+  description: "AI study platform",
+  icons: {
+    icon: "/icon.png",
+  },
 };
 
 export default function RootLayout({
