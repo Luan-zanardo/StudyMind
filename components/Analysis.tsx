@@ -23,7 +23,8 @@ interface GroupedData {
 
 export default function Analysis({ user }: { user: any }) {
   const [history, setHistory] = useState<StudySession[]>([]);
-  const [completedTopics, setCompletedTopics] = useState<string[]>([]);
+  const [completedTopics, setCompletedTopics] = useState<string[]>([]); // State for the old checklist button
+  const [topicCompletionStatus, setTopicCompletionStatus] = useState<{ [key: string]: boolean }>({}); // New state for the left-side checklist
   const [loading, setLoading] = useState(true);
   const [expandedTopic, setExpandedTopic] = useState<string | null>(null);
 
@@ -38,7 +39,7 @@ export default function Analysis({ user }: { user: any }) {
         .eq("user_id", user.id)
         .order("created_at", { ascending: false });
 
-      // Busca Status dos Materiais (Checklist Manual)
+      // Busca Status dos Materiais (Checklist Manual - antigo)
       const { data: statusData } = await supabase
         .from("material_status")
         .select("topic")
@@ -47,6 +48,10 @@ export default function Analysis({ user }: { user: any }) {
 
       if (historyData) setHistory(historyData);
       if (statusData) setCompletedTopics(statusData.map(s => s.topic));
+      
+      // Fetch status for the new checklist if it needs to be persisted
+      // For now, let's assume it's client-side state unless specified otherwise.
+      // If persistence is needed, a new table/column or modification to 'material_status' would be required.
       
       setLoading(false);
     };
@@ -72,6 +77,17 @@ export default function Analysis({ user }: { user: any }) {
       });
       setCompletedTopics(prev => [...prev, topic]);
     }
+  };
+
+  const handleNewChecklistToggle = (topic: string) => {
+    setTopicCompletionStatus(prevStatus => {
+      const newStatus = { ...prevStatus };
+      // Toggle the status for the given topic
+      newStatus[topic] = !newStatus[topic];
+      // Optional: Persist to Supabase if needed, similar to toggleComplete
+      // For now, it's client-side state.
+      return newStatus;
+    });
   };
 
   const clearHistory = async () => {
@@ -110,36 +126,64 @@ export default function Analysis({ user }: { user: any }) {
             const data = grouped[topic];
             const accuracy = (data.totalCorrect / data.totalQuestions) * 100;
             const isExpanded = expandedTopic === topic;
-            const isChecked = completedTopics.includes(topic);
+            const isTopicManuallyCompleted = completedTopics.includes(topic); // From old button/Supabase
+            const isNewChecklistCompleted = topicCompletionStatus[topic] || false; // From new left-side checklist
+
+            // Determine the final completion state for styling the main container
+            const isOverallCompleted = isTopicManuallyCompleted || isNewChecklistCompleted;
+
+            // Define border class based on completion and expansion state
+            let topicBorderClass = "border-white/5 hover:border-white/10"; // Default border
+            if (isOverallCompleted) {
+              topicBorderClass = "!border-emerald-500"; // Green border if completed by either method
+            } else if (isExpanded) {
+              topicBorderClass = "border-indigo-500/50 bg-white/[0.05]"; // Indigo border if expanded but not completed
+            }
 
             return (
-              <div key={topic} className={`bg-white/[0.03] border rounded-[2.5rem] transition-all overflow-hidden ${isExpanded ? "border-indigo-500/50 bg-white/[0.05]" : "border-white/5 hover:border-white/10"}`}>
+              <div 
+                key={topic} 
+                className={`bg-white/[0.03] border rounded-[2.5rem] transition-all overflow-hidden ${topicBorderClass}`}
+              >
                 <div className="w-full flex flex-col md:flex-row md:items-center justify-between gap-6 p-8">
-                  <div className="flex items-center gap-5 cursor-pointer flex-1" onClick={() => setExpandedTopic(isExpanded ? null : topic)}>
+                  {/* Left Side: New Checklist Control + Icon + Topic Details */}
+                  <div className="flex items-center gap-5 flex-1" onClick={() => setExpandedTopic(isExpanded ? null : topic)}>
+                    
+                    {/* New Checklist Control */}
+                    <div 
+                      className="cursor-pointer flex-shrink-0" 
+                      onClick={(e) => {
+                        e.stopPropagation(); // Prevent expanding the topic when clicking the checklist
+                        handleNewChecklistToggle(topic);
+                      }}
+                    >
+                      <div className={`w-14 h-14 rounded-2xl flex items-center justify-center border transition-all duration-300
+                          ${isNewChecklistCompleted ? "bg-emerald-500 border-emerald-500" : "bg-white/5 border-white/10"}`}
+                        >
+                          {isNewChecklistCompleted ? (
+                            <CheckCircle2 className="w-7 h-7 text-white" />
+                          ) : (
+                            <Circle className="w-7 h-7 text-zinc-600" />
+                          )}
+                      </div>
+                    </div>
+
+                    {/* Original Icon and Topic Details */}
                     <div className="relative">
-                      <div className={`w-14 h-14 rounded-2xl flex items-center justify-center border transition-colors ${isChecked ? "bg-emerald-500/10 border-emerald-500/20" : "bg-white/5 border-white/10"}`}>
-                        <FileText className={`w-7 h-7 ${isChecked ? "text-emerald-500" : "text-zinc-600"}`} />
+                      <div className={`w-14 h-14 rounded-2xl flex items-center justify-center border transition-colors ${isTopicManuallyCompleted ? "bg-emerald-500/10 border-emerald-500/20" : "bg-white/5 border-white/10"}`}>
+                        <FileText className={`w-7 h-7 ${isTopicManuallyCompleted ? "text-emerald-500" : "text-zinc-600"}`} />
                       </div>
                     </div>
                     <div>
                       <h3 className="text-xl font-bold text-white truncate max-w-[200px] md:max-w-md">{topic}</h3>
                       <p className="text-zinc-500 text-[10px] font-black uppercase tracking-widest mt-1">
-                        {data.sessions.length} Tentativas • {isChecked ? "Estudado" : "Em Progresso"}
+                        {data.sessions.length} Tentativas • {isTopicManuallyCompleted ? "Estudado" : "Em Progresso"}
                       </p>
                     </div>
                   </div>
 
+                  {/* Right Side: Average Score, Expand Button */}
                   <div className="flex items-center gap-8">
-                    <div className="text-right">
-                      <p className="text-zinc-500 text-[10px] font-black uppercase tracking-widest mb-1 text-center">Checklist</p>
-                      <button 
-                        onClick={(e) => toggleComplete(topic, e)}
-                        className={`p-2 rounded-xl transition-all ${isChecked ? "bg-emerald-500 text-white scale-110 shadow-lg shadow-emerald-500/20" : "bg-white/5 text-zinc-700 hover:text-zinc-500"}`}
-                      >
-                        {isChecked ? <CheckCircle2 className="w-6 h-6" /> : <Circle className="w-6 h-6" />}
-                      </button>
-                    </div>
-                    
                     <div className="text-right min-w-[80px]">
                       <p className="text-zinc-500 text-[10px] font-black uppercase tracking-widest mb-1">Média</p>
                       <p className={`text-2xl font-black ${accuracy >= 70 ? 'text-emerald-400' : 'text-indigo-400'}`}>{accuracy.toFixed(0)}%</p>
