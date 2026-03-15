@@ -271,7 +271,7 @@ export default function Dashboard() {
                               {item.topico}
                             </h3>
                           </div>
-                          <BoldRenderer text={item.explicacao} className="text-zinc-400 text-justify" />
+                          <BoldRenderer text={item.explicacao} className="text-zinc-400" />
                         </div>
                       ))}
                     </div>

@@ -123,47 +123,104 @@ export default function Analysis({ user }: { user: any }) {
                 key={topic} 
                 className={`bg-white/[0.03] border rounded-[2.5rem] transition-all overflow-hidden ${topicBorderClass}`}
               >
-                <div className="w-full flex flex-col md:flex-row md:items-center justify-between gap-6 p-8">
-                  <div className="flex items-center gap-2 md:gap-5 flex-1" onClick={() => setExpandedTopic(isExpanded ? null : topic)}>
+                <div className="w-full flex flex-col justify-between gap-4 px-6 py-4 md:flex-row md:items-center md:gap-6 md:p-8">
+                    {/* --- Mobile Layout --- */}
+                    <div className="md:hidden flex flex-col gap-4">
+                        {/* First Line: Icon + Title */}
+                        <div className="flex items-center gap-3" onClick={() => setExpandedTopic(isExpanded ? null : topic)}>
+                            {/* File Icon */}
+                            <div className="relative flex-shrink-0">
+                                <div className={`w-10 h-10 rounded-lg flex items-center justify-center border transition-colors ${isCompleted ? "bg-emerald-500/10 border-emerald-500/20" : "bg-white/5 border-white/10"}`}>
+                                    <FileText className={`w-5 h-5 ${isCompleted ? "text-emerald-500" : "text-zinc-600"}`} />
+                                </div>
+                            </div>
+                            {/* Topic Title */}
+                            <h3 className="text-base font-bold text-white truncate max-w-[calc(100%-70px)]">{topic}</h3>
+                        </div>
 
-                    <div 
-                      className="cursor-pointer flex-shrink-0" 
-                      onClick={(e) => toggleTopicCompletion(topic, e)}
-                    >
-                      <div className={`w-10 h-10 md:w-14 md:h-14 rounded-2xl flex items-center justify-center border transition-all duration-300
-                          ${isCompleted ? "bg-emerald-500 border-emerald-500" : "bg-white/5 border-white/10"}`}
-                        >
-                          {isCompleted ? (
-                            <CheckCircle2 className="w-5 h-5 md:w-7 md:h-7 text-white" />
-                          ) : (
-                            <Circle className="w-5 h-5 md:w-7 md:h-7 text-zinc-600" />
-                          )}
-                      </div>
+                        {/* Second Line: Checklist + Attempts + Accuracy + Expand Button */}
+                        <div className="flex items-center justify-between">
+                            {/* Checklist Control */}
+                            <div
+                                className="cursor-pointer flex-shrink-0"
+                                onClick={(e) => toggleTopicCompletion(topic, e)}
+                            >
+                                <div className={`w-10 h-10 rounded-lg flex items-center justify-center border transition-all duration-300
+                                    ${isCompleted ? "bg-emerald-500 border-emerald-500" : "bg-white/5 border-white/10"}`}
+                                >
+                                    {isCompleted ? (
+                                        <CheckCircle2 className="w-5 h-5 text-white" />
+                                    ) : (
+                                        <Circle className="w-5 h-5 text-zinc-600" />
+                                    )}
+                                </div>
+                            </div>
+
+                            {/* Attempts */}
+                            <p className="text-zinc-500 text-xs font-black uppercase tracking-widest">
+                                {data.sessions.length} Tentativas
+                            </p>
+
+                            {/* Accuracy + Expand Button */}
+                            <div className="flex items-center gap-4">
+                                <div className="text-right min-w-[60px]">
+                                    <p className="text-zinc-500 text-[10px] font-black uppercase tracking-widest mb-1">Média</p>
+                                    <p className={`text-base font-black ${accuracy >= 70 ? 'text-emerald-400' : 'text-indigo-400'}`}>{accuracy.toFixed(0)}%</p>
+                                </div>
+
+                                <button onClick={() => setExpandedTopic(isExpanded ? null : topic)} className="p-1 hover:bg-white/5 rounded-lg transition">
+                                    {isExpanded ? <ChevronUp className="w-4 h-4 text-zinc-500" /> : <ChevronDown className="w-4 h-4 text-zinc-500" />}
+                                </button>
+                            </div>
+                        </div>
                     </div>
 
-                    <div className="relative">
-                      <div className={`w-10 h-10 md:w-14 md:h-14 rounded-2xl flex items-center justify-center border transition-colors ${isCompleted ? "bg-emerald-500/10 border-emerald-500/20" : "bg-white/5 border-white/10"}`}>
-                        <FileText className={`w-5 h-5 md:w-7 md:h-7 ${isCompleted ? "text-emerald-500" : "text-zinc-600"}`} />
-                      </div>
-                    </div>
-                    <div>
-                      <h3 className="text-xl font-bold text-white truncate md:max-w-md">{topic}</h3>
-                      <p className="text-zinc-500 text-[10px] font-black uppercase tracking-widest mt-1">
-                        {data.sessions.length} Tentativas
-                      </p>
-                    </div>
-                  </div>
+                    {/* --- Desktop Layout --- */}
+                    <div className="hidden md:flex w-full md:flex-row md:items-center justify-between gap-6 p-4 md:p-8"> {/* Original desktop layout, slightly adjusted padding */}
+                        <div className="flex items-center gap-2 md:gap-5 flex-1" onClick={() => setExpandedTopic(isExpanded ? null : topic)}>
+                            {/* Checklist Control */}
+                            <div 
+                                className="cursor-pointer flex-shrink-0" 
+                                onClick={(e) => toggleTopicCompletion(topic, e)}
+                            >
+                                <div className={`w-10 h-10 md:w-14 md:h-14 rounded-2xl flex items-center justify-center border transition-all duration-300
+                                    ${isCompleted ? "bg-emerald-500 border-emerald-500" : "bg-white/5 border-white/10"}`}
+                                >
+                                    {isCompleted ? (
+                                        <CheckCircle2 className="w-5 h-5 md:w-7 md:h-7 text-white" />
+                                    ) : (
+                                        <Circle className="w-5 h-5 md:w-7 md:h-7 text-zinc-600" />
+                                    )}
+                                </div>
+                            </div>
 
-                  <div className="flex items-center gap-8">
-                    <div className="text-right min-w-[80px]">
-                      <p className="text-zinc-500 text-[10px] font-black uppercase tracking-widest mb-1">Média</p>
-                      <p className={`text-2xl font-black ${accuracy >= 70 ? 'text-emerald-400' : 'text-indigo-400'}`}>{accuracy.toFixed(0)}%</p>
-                    </div>
+                            {/* File Icon */}
+                            <div className="relative">
+                                <div className={`w-10 h-10 md:w-14 md:h-14 rounded-2xl flex items-center justify-center border transition-colors ${isCompleted ? "bg-emerald-500/10 border-emerald-500/20" : "bg-white/5 border-white/10"}`}>
+                                    <FileText className={`w-5 h-5 md:w-7 md:h-7 ${isCompleted ? "text-emerald-500" : "text-zinc-600"}`} />
+                                </div>
+                            </div>
+                            <div>
+                                <h3 className="text-base font-bold text-white md:text-xl truncate md:max-w-md">{topic}</h3>
+                                {/* Re-adding the Tentativas text for desktop, as it was removed for mobile simplicity */}
+                                <p className="text-zinc-500 text-[10px] font-black uppercase tracking-widest mt-1">
+                                    {data.sessions.length} Tentativas
+                                </p>
+                            </div>
+                        </div>
 
-                    <button onClick={() => setExpandedTopic(isExpanded ? null : topic)} className="p-2 hover:bg-white/5 rounded-lg transition">
-                      {isExpanded ? <ChevronUp className="text-zinc-500" /> : <ChevronDown className="text-zinc-500" />}
-                    </button>
-                  </div>
+                        {/* Right Side: Average Score, Expand Button */}
+                        <div className="flex items-center gap-8">
+                            <div className="text-right min-w-[80px]">
+                                <p className="text-zinc-500 text-[10px] font-black uppercase tracking-widest mb-1">Média</p>
+                                <p className={`text-2xl font-black ${accuracy >= 70 ? 'text-emerald-400' : 'text-indigo-400'}`}>{accuracy.toFixed(0)}%</p>
+                            </div>
+
+                            <button onClick={() => setExpandedTopic(isExpanded ? null : topic)} className="p-2 hover:bg-white/5 rounded-lg transition">
+                                {isExpanded ? <ChevronUp className="text-zinc-500" /> : <ChevronDown className="text-zinc-500" />}
+                            </button>
+                        </div>
+                    </div>
                 </div>
 
                 {isExpanded && (
