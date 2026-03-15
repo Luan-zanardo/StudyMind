@@ -42,7 +42,7 @@ export default function Simulado({ questoes, onComplete }: { questoes: Questao[]
 
   if (finished) {
     return (
-      <div className="bg-white/[0.03] border border-white/10 p-12 rounded-[3rem] text-center space-y-8 animate-in zoom-in-95 duration-500 relative overflow-hidden">
+      <div className="bg-white/[0.03] border border-white/10 p-8 md:p-12 rounded-[3rem] text-center space-y-8 animate-in zoom-in-95 duration-500 relative overflow-hidden">
         <div className="absolute inset-0 bg-emerald-500/5 blur-3xl pointer-events-none" />
         <div className="relative">
           <div className="w-24 h-24 bg-emerald-500/10 border border-emerald-500/20 rounded-full flex items-center justify-center mx-auto mb-6">
@@ -77,7 +77,7 @@ export default function Simulado({ questoes, onComplete }: { questoes: Questao[]
   const q = questoes[current];
 
   return (
-    <div className="bg-white/[0.03] border border-white/5 p-8 md:p-10 rounded-[2.5rem] space-y-8 relative overflow-hidden">
+    <div className="bg-white/[0.03] border border-white/5 p-6 md:p-10 rounded-[2.5rem] space-y-8 relative overflow-hidden">
       <div className="flex justify-between items-center text-xs font-black uppercase tracking-[0.2em]">
         <span className="text-zinc-500">Questão {current + 1} de {questoes.length}</span>
         <span className="text-indigo-400 bg-indigo-500/10 px-3 py-1 rounded-full">Score: {score}</span>
