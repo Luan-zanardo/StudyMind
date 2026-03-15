@@ -1,0 +1,23 @@
+CONTEXTO DO PROJETO: StudyMind (Next.js 14+ App Router)
+OBJETIVO: Criar uma plataforma de estudo ativo onde o aluno sobe um PDF e a IA gera ferramentas de aprendizado.
+
+REQUISITOS TÉCNICOS:
+1. Framework: Next.js com Tailwind CSS e Lucide React para ícones.
+2. Integração de IA: Google Gemini API (modelo gemini-1.5-flash).
+3. Processamento de Arquivos: Biblioteca 'pdf-parse' para extrair texto no servidor.
+
+ESTRUTURA DE ARQUIVOS SOLICITADA:
+- /app/api/process/route.ts -> Rota POST que recebe o PDF, extrai o texto e chama o Gemini.
+- /app/dashboard/page.tsx -> Interface principal com área de upload e visualização.
+- /components/Simulado.tsx -> Componente interativo para renderizar as questões do JSON da IA.
+- /lib/gemini.ts -> Configuração do cliente da IA.
+
+LOGICA DA IA (PROMPT INTERNO):
+A IA deve retornar obrigatoriamente um JSON com:
+- 'resumo': Tópicos principais do PDF.
+- 'questoes': Array com enunciado, 4 opções e índice da correta.
+- 'flashcards': Array com frente e verso para revisão.
+
+TAREFA:
+Gere o código completo para esses arquivos acima, priorizando um design Dark/Moderno. 
+Antes de gerar o código, liste os comandos 'npm install' necessários para todas as dependências citadas.
