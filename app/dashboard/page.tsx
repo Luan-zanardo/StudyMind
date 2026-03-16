@@ -3,11 +3,10 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
-import { 
-  Upload, FileText, Brain, GraduationCap, Loader2, 
-  Layout, BarChart2, LogOut, BookOpen, History
-} from "lucide-react";
-import Simulado from "@/components/Simulado";
+import {
+  Upload, FileText, Brain, GraduationCap, Loader2,
+  Layout, BarChart2, LogOut, BookOpen, History, Trash2
+} from "lucide-react";import Simulado from "@/components/Simulado";
 import Analysis from "@/components/Analysis";
 import BoldRenderer from "@/components/BoldRenderer";
 import Link from "next/link";
@@ -21,6 +20,7 @@ export default function Dashboard() {
   const [user, setUser] = useState<any>(null);
   const [authLoading, setAuthLoading] = useState(true);
   const [materials, setMaterials] = useState<any[]>([]);
+  const [currentTopic, setCurrentTopic] = useState<string | null>(null); // New state to hold the current topic
   const router = useRouter();
 
   useEffect(() => {
@@ -52,13 +52,31 @@ export default function Dashboard() {
     router.push("/login");
   };
 
-  const savePerformance = async (score: number, total: number) => {
+  const clearMaterialsHistory = async () => {
     if (!user) return;
+    if (confirm("Tem certeza que deseja apagar todo o histórico de materiais?")) {
+      const { error } = await supabase
+        .from('processed_materials')
+        .delete()
+        .eq('user_id', user.id);
+
+      if (error) {
+        console.error("Error clearing materials history:", error);
+        alert("Erro ao limpar histórico: " + error.message);
+      } else {
+        setMaterials([]);
+        alert("Histórico de materiais limpo com sucesso!");
+      }
+    }
+  };
+
+  const savePerformance = async (score: number, total: number) => {
+    if (!user || !currentTopic) return; // Ensure currentTopic is available
     await supabase.from("study_sessions").insert({
       user_id: user.id,
       score,
       total,
-      topic: file?.name?.replace(".pdf", "").replace(".pptx", "") || "Simulado"
+      topic: currentTopic // Use currentTopic instead of file?.name
     });
   };
 
@@ -89,8 +107,10 @@ export default function Dashboard() {
       }
 
       setData(result);
+      const extractedTopic = file.name.replace(".pdf", "").replace(".pptx", "");
+      setCurrentTopic(extractedTopic); // Set currentTopic on upload
       // Add new material to the top of the list without re-fetching
-      setMaterials(prev => [{ file_name: file.name, ai_content: result }, ...prev]);
+      setMaterials(prev => [{ file_name: file.name, ai_content: result, topic: extractedTopic }, ...prev]); // Also add topic to materials for consistency
     } catch (err: any) {
       setError({
         msg: err.msg || "Erro no processamento.",
@@ -103,6 +123,7 @@ export default function Dashboard() {
 
   const handleMaterialClick = (material: any) => {
     setData(material.ai_content);
+    setCurrentTopic(material.file_name.replace(".pdf", "").replace(".pptx", "")); // Set currentTopic from history material
     setFile(null); // Clear file input
   };
 
@@ -215,23 +236,36 @@ export default function Dashboard() {
 
               {materials.length > 0 && (
                 <div className="bg-white/[0.03] border border-white/5 p-8 rounded-[2.5rem] space-y-6">
-                  <h2 className="text-lg font-bold flex items-center gap-3">
-                    <History className="w-5 h-5 text-indigo-400" />
-                    Histórico
-                  </h2>
+                  <div className="flex items-center justify-between">
+                    <h2 className="text-lg font-bold flex items-center gap-3">
+                      <History className="w-5 h-5 text-indigo-400" />
+                      Histórico
+                    </h2>
+                    <button 
+                      onClick={clearMaterialsHistory} 
+                      className="text-zinc-600 hover:text-red-400 text-xs font-black uppercase tracking-widest transition flex items-center gap-2"
+                    >
+                      <Trash2 className="w-4 h-4" /> Limpar
+                    </button>
+                  </div>
                   <div className="space-y-4">
-                    {materials.map((material, index) => (
-                      <div 
-                        key={index} 
-                        onClick={() => handleMaterialClick(material)}
-                        className="cursor-pointer p-4 border border-white/10 rounded-2xl bg-white/5 w-full flex items-center gap-4 hover:bg-white/10 transition"
-                      >
-                        <FileText className="w-8 h-8 text-zinc-400" />
-                        <p className="text-sm font-semibold text-zinc-300 break-words">
-                          {material.file_name}
-                        </p>
-                      </div>
-                    ))}
+                    {materials.map((material, index) => {
+                      const materialTopic = material.file_name.replace(".pdf", "").replace(".pptx", "");
+                      const isActive = currentTopic === materialTopic;
+
+                      return (
+                        <div 
+                          key={index} 
+                          onClick={() => handleMaterialClick(material)}
+                          className={`cursor-pointer p-4 border rounded-2xl bg-white/5 w-full flex items-center gap-4 hover:bg-white/10 transition ${isActive ? 'border-emerald-500' : 'border-white/10'}`}
+                        >
+                          <FileText className="w-8 h-8 text-zinc-400" />
+                          <p className="text-sm font-semibold text-zinc-300 break-words flex-1 truncate">
+                            {material.file_name}
+                          </p>
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               )}

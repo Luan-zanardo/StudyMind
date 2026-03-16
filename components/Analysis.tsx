@@ -242,10 +242,10 @@ export default function Analysis({ user }: { user: any }) {
           })}
         </div>
       ) : (
-        <div className="bg-white/[0.02] border border-white/5 border-dashed rounded-[3rem] p-32 text-center">
+        <div className="bg-white/[0.02] border border-white/5 border-dashed rounded-[3rem] p-10 text-center">
           <Award className="w-16 h-16 text-zinc-800 mx-auto mb-6 opacity-20" />
           <h3 className="text-xl font-bold text-zinc-500 mb-2">Sem histórico</h3>
-          <p className="text-zinc-600 max-w-xs mx-auto font-medium">As sessões e seu histórico de estudos serão salvos na sua conta.</p>
+          <p className="text-zinc-600 font-medium mx-auto md:max-w-xs">As sessões e seu histórico de estudos serão salvos na sua conta.</p>
         </div>
       )}
     </div>
